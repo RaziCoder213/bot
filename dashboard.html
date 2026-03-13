@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AZIM AI TRADER v3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080a0f;--s1:#0e1117;--s2:#141820;--s3:#1a1f2e;--s4:#202535;
+  --bd:#252b3b;--bd2:#2e3650;
+  --blue:#3b82f6;--blue2:#6366f1;--green:#22c55e;--red:#ef4444;
+  --yellow:#f59e0b;--purple:#a855f7;--cyan:#06b6d4;--orange:#f97316;
+  --text:#e2e8f0;--t2:#94a3b8;--t3:#64748b;--t4:#475569;
+  --r:8px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden}
+
+/* ── Top bar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:var(--s1);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:.3px}
+.logo-icon{font-size:20px;filter:drop-shadow(0 0 6px #f59e0b)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.chip-run{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.chip-stop{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.chip-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.uptime-chip{background:var(--s3);border:1px solid var(--bd);padding:3px 10px;border-radius:20px;font-size:11px;color:var(--t3);font-variant-numeric:tabular-nums}
+.btn{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;white-space:nowrap}
+.btn:hover:not(:disabled){opacity:.85;transform:translateY(-1px)}
+.btn:disabled{opacity:.35;cursor:default;transform:none}
+.btn-green{background:var(--green);color:#000}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--bd2)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+/* ── Stats strip ── */
+.stats{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));border-bottom:1px solid var(--bd);overflow-x:auto}
+.stat{background:var(--s1);padding:14px 20px;border-right:1px solid var(--bd)}
+.stat:last-child{border-right:none}
+.stat-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.stat-val{font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.stat-sub{font-size:10px;color:var(--t4);margin-top:4px}
+.c-green{color:var(--green)} .c-red{color:var(--red)} .c-blue{color:var(--blue)} .c-yellow{color:var(--yellow)} .c-purple{color:var(--purple)} .c-cyan{color:var(--cyan)}
+
+/* ── Layout ── */
+.body{display:grid;grid-template-columns:minmax(0,1fr) 270px;min-height:calc(100vh - 110px)}
+.main{padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0;overflow-x:hidden}
+.side{border-left:1px solid var(--bd);overflow-y:auto;position:sticky;top:52px;height:calc(100vh - 52px)}
+
+/* ── Section ── */
+.sec{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;min-width:0}
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bd);background:var(--s2)}
+.sec-title{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:7px}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;background:var(--blue);color:#fff;font-size:10px;font-weight:800;border-radius:9px}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto;width:100%;max-width:100%}
+.tbl-scroll{overflow-x:auto;max-height:300px;overflow-y:auto;width:100%}
+table{width:100%;border-collapse:collapse;min-width:max-content}
+th{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap;background:var(--s2);position:sticky;top:0}
+td{padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--t2);white-space:nowrap;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--s2)}
+.r{text-align:right;font-variant-numeric:tabular-nums;font-family:'Courier New',monospace}
+.empty{text-align:center;padding:28px;color:var(--t4);font-style:italic}
+
+/* ── Tags ── */
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.tag-long{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.tag-short{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.tag-tp2{background:rgba(34,197,94,.1);color:var(--green)}
+.tag-sl{background:rgba(239,68,68,.1);color:var(--red)}
+.tag-manual{background:rgba(245,158,11,.1);color:var(--yellow)}
+.tag-time{background:rgba(100,116,139,.1);color:var(--t2)}
+.tag-traded{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.25)}
+
+/* ── Score bar ── */
+.sbar{display:flex;align-items:center;gap:5px;min-width:90px}
+.sbar-bg{flex:1;height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))}
+.sbar-num{font-size:11px;color:var(--text);font-weight:700;width:28px;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ── Sidebar blocks ── */
+.sb{padding:14px 16px;border-bottom:1px solid var(--bd)}
+.sb-title{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sb-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(37,43,59,.5);font-size:12px}
+.sb-row:last-child{border:none}
+.sb-key{color:var(--t3)}
+.sb-val{font-weight:600;color:var(--text)}
+
+/* ── F&G gauge ── */
+.fg-num{font-size:40px;font-weight:900;text-align:center;line-height:1;margin:6px 0 2px}
+.fg-lbl{text-align:center;font-size:11px;color:var(--t3);margin-bottom:10px}
+.fg-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e);position:relative;margin:4px 0}
+.fg-pin{position:absolute;top:-4px;width:16px;height:16px;background:#fff;border-radius:50%;border:2px solid var(--bg);transform:translateX(-50%);transition:left .6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 6px rgba(0,0,0,.5)}
+.fg-lbls{display:flex;justify-content:space-between;font-size:9px;color:var(--t4);margin-top:3px}
+
+/* ── Health rows ── */
+.h-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(37,43,59,.4);font-size:12px}
+.h-row:last-child{border:none}
+.dot-ok{color:var(--green)} .dot-err{color:var(--red)} .dot-warn{color:var(--yellow)}
+
+/* ── Symbol list ── */
+.sym-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(37,43,59,.3);font-size:12px}
+.sym-item:last-child{border:none}
+.sym-rank{font-size:10px;color:var(--t4);width:18px}
+.sym-name{font-weight:600}
+.sym-score{font-size:11px;color:var(--t3)}
+
+/* ── Config ── */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px}
+.cfg-f{display:flex;flex-direction:column;gap:3px}
+.cfg-lbl{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+.cfg-inp{background:var(--s3);border:1px solid var(--bd2);color:var(--text);padding:6px 8px;border-radius:5px;font-size:12px;width:100%;outline:none}
+.cfg-inp:focus{border-color:var(--blue)}
+.cfg-inp option{background:var(--s3)}
+.toggles{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 14px 14px}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--s2);border-radius:5px;border:1px solid var(--bd)}
+.tog-lbl{font-size:11px;color:var(--t2)}
+.tog{position:relative;width:32px;height:17px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-sl{position:absolute;inset:0;background:var(--s4);border-radius:9px;transition:.2s;border:1px solid var(--bd2)}
+.tog-sl:before{content:'';position:absolute;width:11px;height:11px;left:2px;top:2px;background:var(--t3);border-radius:50%;transition:.2s}
+.tog input:checked+.tog-sl{background:var(--blue);border-color:var(--blue)}
+.tog input:checked+.tog-sl:before{transform:translateX(15px);background:#fff}
+
+/* ── Error ── */
+.err-item{padding:6px 12px;font-size:11px;color:var(--red);font-family:monospace;border-bottom:1px solid rgba(239,68,68,.1)}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--s3);border:1px solid var(--bd2);padding:10px 18px;border-radius:8px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999}
+#toast.show{opacity:1}
+
+/* ── PnL colors ── */
+.ppos{color:var(--green)} .pneg{color:var(--red)}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-icon">⚡</span>
+    <span>AZIM AI TRADER <span style="color:var(--cyan);font-size:11px">v3</span></span>
+    <span id="runChip" class="chip chip-stop"><span class="chip-dot"></span><span id="runTxt">STOPPED</span></span>
+  </div>
+  <div class="topbar-right">
+    <span class="uptime-chip" id="uptimeEl">0h 0m 0s</span>
+    <button class="btn btn-ghost btn-sm" onclick="confirmCloseAll()">⚡ Close All</button>
+    <button class="btn btn-green btn-sm" id="btnStart" onclick="startBot()">▶ Start</button>
+    <button class="btn btn-red   btn-sm" id="btnStop"  onclick="stopBot()" disabled>⏹ Stop</button>
+  </div>
+</div>
+
+<!-- STATS STRIP -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-lbl">Total Trades</div>
+    <div class="stat-val" id="sTrades">0</div>
+    <div class="stat-sub" id="sWL">0W / 0L</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Win Rate</div>
+    <div class="stat-val" id="sWin">0%</div>
+    <div class="stat-sub">closed trades</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Net PnL</div>
+    <div class="stat-val" id="sPnl">$0.00</div>
+    <div class="stat-sub">all time</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Open Positions</div>
+    <div class="stat-val c-blue" id="sOpen">0</div>
+    <div class="stat-sub">active now</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Today PnL</div>
+    <div class="stat-val" id="sToday">$0.00</div>
+    <div class="stat-sub" id="sDate">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Signals</div>
+    <div class="stat-val c-cyan" id="sSig">0</div>
+    <div class="stat-sub">this session</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">Unrealized PnL</div>
+    <div class="stat-val" id="sUnrealized">$0.00</div>
+    <div class="stat-sub">open positions</div>
+  </div>
+</div>
+
+<!-- BODY -->
+<div class="body">
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- OPEN TRADES -->
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">📊 Open Trades <span class="badge" id="openBadge">0</span></div>
+        <button class="btn btn-ghost btn-sm" onclick="refreshAll()">↻ Refresh</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Symbol</th><th>Dir</th><th>Entry</th><th>Current</th>
+            <th>PnL$</th><th>PnL%</th><th>Price Δ%</th><th>Invested</th><th>Notional</th><th>Leverage</th><th>Mode</th>
+            <th>SL</th><th>TP1</th><th>TP2</th>
+            <th>R:R</th><th>Strategy</th><th>Score</th><th>TF</th><th>Duration</th><th>Action</th>
+          </tr></thead>
+          <tbody id="openBody"><tr><td colspan="20" class="empty">No open trades</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SIGNALS -->
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">🔍 Signals <span class="badge" id="sigBadge">0</span></div>
+        <span style="font-size:11px;color:var(--t3)" id="scanStatus">Scanner warming up…</span>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>Symbol</th><th>Dir</th><th>Score</th><th>Entry</th><th>SL</th>
+            <th>TP1</th><th>TP2</th><th>R:R</th><th>Strategy</th><th>TF</th>
+            <th>Regime</th><th>ADX</th><th>RSI</th><th>Vol</th><th>Status</th><th>Time</th>
+          </tr></thead>
+          <tbody id="sigBody"><tr><td colspan="16" class="empty">No signals yet — scanner running, wait 2–5 min…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CLOSED TRADES -->
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">📁 Closed Trades <span class="badge" id="closedBadge">0</span></div>
+      </div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>Symbol</th><th>Dir</th><th>Entry</th><th>Exit</th>
+            <th>Net PnL</th><th>Strategy</th><th>Reason</th><th>Duration</th><th>Closed</th>
+          </tr></thead>
+          <tbody id="closedBody"><tr><td colspan="9" class="empty">No closed trades</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- STRATEGY PERFORMANCE -->
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">🏆 Strategy Performance</div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Strategy</th><th>Trades</th><th>Win Rate</th><th>Net PnL</th><th>Avg PnL/Trade</th>
+          </tr></thead>
+          <tbody id="stratBody"><tr><td colspan="5" class="empty">No data yet</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">🖥️ Live Logs <span class="badge" id="logBadge">0</span></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="logFilter" onchange="filterLogs()" style="background:var(--s3);border:1px solid var(--bd2);color:var(--t2);padding:3px 7px;border-radius:5px;font-size:11px">
+            <option value="">All</option>
+            <option value="ERROR">Errors only</option>
+            <option value="Signal">Signals only</option>
+            <option value="Trade">Trades only</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="copyLogs()">📋 Copy All</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearLogDisplay()">🗑 Clear</button>
+        </div>
+      </div>
+      <div id="logBox" style="background:var(--s2);font-family:'Courier New',monospace;font-size:11px;padding:10px 14px;max-height:320px;overflow-y:auto;line-height:1.7;color:var(--t2)">
+        <span style="color:var(--t4)">Waiting for logs…</span>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">⚙ Configuration</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="resetConfig()">↺ Reset</button>
+          <button class="btn btn-blue btn-sm" onclick="saveConfig()">💾 Save All</button>
+        </div>
+      </div>
+
+      <!-- Section: Trading -->
+      <div style="padding:10px 14px 0;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">📊 Trading Settings</div>
+      <div class="cfg-grid">
+        <div class="cfg-f"><label class="cfg-lbl">Trade Mode</label>
+          <select class="cfg-inp" id="cfgMode">
+            <option value="AUTO">AUTO (bot decides size)</option>
+            <option value="MANUAL">MANUAL (fixed amount)</option>
+          </select></div>
+        <div class="cfg-f"><label class="cfg-lbl">Wallet Balance ($)</label>
+          <input class="cfg-inp" type="number" id="cfgWallet" min="10" step="10" placeholder="e.g. 1000"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Risk % Per Trade (AUTO)</label>
+          <input class="cfg-inp" type="number" id="cfgRisk" step="0.1" min="0.1" max="10" placeholder="2.5"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Trade Amount $ (MANUAL)</label>
+          <input class="cfg-inp" type="number" id="cfgAmount" step="10" min="1" placeholder="100"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Leverage (Cross)</label>
+          <input class="cfg-inp" id="cfgLeverage" type="number" min="1" max="125" value="10"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Max Open Trades</label>
+          <input class="cfg-inp" type="number" id="cfgMaxTrades" min="1" max="20" placeholder="3"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Max Trade Duration (hrs)</label>
+          <input class="cfg-inp" type="number" id="cfgMaxHours" min="1" max="168" placeholder="36"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Max Trades Per Day</label>
+          <input class="cfg-inp" type="number" id="cfgMaxDailyTrades" min="1" max="50" placeholder="10"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Daily Max Loss %</label>
+          <input class="cfg-inp" type="number" id="cfgMaxDailyLoss" step="0.5" min="1" max="50" placeholder="5"/></div>
+      </div>
+
+      <!-- Section: Manual SL/TP -->
+      <div style="padding:10px 14px 0;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">🎯 Manual SL / TP (MANUAL mode only)</div>
+      <div class="cfg-grid">
+        <div class="cfg-f"><label class="cfg-lbl">Stop Loss %</label>
+          <input class="cfg-inp" type="number" id="cfgSL" step="0.1" min="0.1" placeholder="1.8"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Take Profit 1 %</label>
+          <input class="cfg-inp" type="number" id="cfgTP1" step="0.1" min="0.1" placeholder="3.5"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Take Profit 2 %</label>
+          <input class="cfg-inp" type="number" id="cfgTP2" step="0.1" min="0.1" placeholder="6.0"/></div>
+        <div class="cfg-f"><label class="cfg-lbl">Min Risk:Reward Ratio</label>
+          <input class="cfg-inp" type="number" id="cfgMinRR" step="0.1" min="1" placeholder="2.0"/></div>
+      </div>
+
+      <!-- Section: Signal Quality -->
+      <div style="padding:10px 14px 0;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">🔍 Signal Quality Gates</div>
+      <div style="padding:6px 14px 2px;font-size:11px;color:var(--t3)">
+        Higher values = fewer but stronger signals. Recommended: Min Score 55+, ADX 18+, Score Gap 10+
+      </div>
+      <div class="cfg-grid">
+        <div class="cfg-f">
+          <label class="cfg-lbl">Min Decision Score (0-100)</label>
+          <input class="cfg-inp" type="number" id="cfgMinScore" min="10" max="90" placeholder="42"/>
+          <span style="font-size:10px;color:var(--t4)">Default 42 · Strict: 55+ · Very strict: 65+</span>
+        </div>
+        <div class="cfg-f">
+          <label class="cfg-lbl">Min ADX (Trend Strength)</label>
+          <input class="cfg-inp" type="number" id="cfgAdxMin" min="5" max="50" step="1" placeholder="12"/>
+          <span style="font-size:10px;color:var(--t4)">Default 12 · Strict: 18+ · Blocks ranging markets</span>
+        </div>
+        <div class="cfg-f">
+          <label class="cfg-lbl">Min Score Gap (Direction)</label>
+          <input class="cfg-inp" type="number" id="cfgScoreGap" min="2" max="30" step="1" placeholder="8"/>
+          <span style="font-size:10px;color:var(--t4)">Default 8 · Strict: 12+ · Long vs Short conviction</span>
+        </div>
+        <div class="cfg-f">
+          <label class="cfg-lbl">Min Volume Ratio</label>
+          <input class="cfg-inp" type="number" id="cfgVolRatio" min="0.3" max="3.0" step="0.1" placeholder="0.8"/>
+          <span style="font-size:10px;color:var(--t4)">Default 0.8 · Strict: 1.2+ · vs 20-period avg</span>
+        </div>
+        <div class="cfg-f">
+          <label class="cfg-lbl">Min Risk:Reward Ratio</label>
+          <input class="cfg-inp" type="number" id="cfgMinRR" step="0.1" min="1" placeholder="2.0"/>
+          <span style="font-size:10px;color:var(--t4)">Default 2.0 · Strict: 2.5+ · TP1/SL ratio</span>
+        </div>
+        <div class="cfg-f">
+          <label class="cfg-lbl">Scan Interval (seconds)</label>
+          <input class="cfg-inp" type="number" id="cfgInterval" min="30" placeholder="60"/>
+          <span style="font-size:10px;color:var(--t4)">How often to scan all symbols</span>
+        </div>
+      </div>
+      <!-- Quick presets -->
+      <div style="padding:0 14px 12px;display:flex;gap:6px;flex-wrap:wrap">
+        <span style="font-size:10px;color:var(--t3);align-self:center;font-weight:700">PRESETS:</span>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('normal')" style="font-size:10px">Normal (default)</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('strict')" style="font-size:10px;border-color:var(--yellow);color:var(--yellow)">Strict (fewer, better)</button>
+        <button class="btn btn-ghost btn-sm" onclick="applyPreset('verystrict')" style="font-size:10px;border-color:var(--green);color:var(--green)">Very Strict (best only)</button>
+      </div>
+
+      <!-- Section: Filters toggles -->
+      <div style="padding:10px 14px 0;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">🔧 Filters & Features</div>
+      <div class="toggles">
+        <div class="tog-row"><span class="tog-lbl">Funding Rate Filter</span>
+          <label class="tog"><input type="checkbox" id="cfgFunding"/><span class="tog-sl"></span></label></div>
+        <div class="tog-row"><span class="tog-lbl">Orderbook Filter</span>
+          <label class="tog"><input type="checkbox" id="cfgOB"/><span class="tog-sl"></span></label></div>
+        <div class="tog-row"><span class="tog-lbl">Discord Notifications</span>
+          <label class="tog"><input type="checkbox" id="cfgDiscord"/><span class="tog-sl"></span></label></div>
+        <div class="tog-row"><span class="tog-lbl">WebSocket Live Prices</span>
+          <label class="tog"><input type="checkbox" id="cfgWS"/><span class="tog-sl"></span></label></div>
+      </div>
+
+      <!-- Section: Symbol Scan Mode -->
+      <div style="padding:10px 14px 0;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">📈 Symbol Scan Mode</div>
+      <div style="padding:10px 14px">
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button class="btn btn-sm" id="btnModeAll" onclick="setSymbolMode('ALL')"
+            style="background:var(--blue);color:#fff;flex:1">🌐 ALL Symbols (Bitget Live)</button>
+          <button class="btn btn-sm btn-ghost" id="btnModeCustom" onclick="setSymbolMode('CUSTOM')"
+            style="flex:1">✏️ Custom Symbols Only</button>
+        </div>
+        <div id="customSymDiv" style="display:none">
+          <label class="cfg-lbl" style="display:block;margin-bottom:4px">Custom Symbols (comma separated)</label>
+          <textarea id="cfgCustomSyms" class="cfg-inp" rows="3"
+            style="width:100%;resize:vertical;font-family:monospace;font-size:11px"
+            placeholder="BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT"></textarea>
+          <div style="margin-top:6px;display:flex;gap:6px">
+            <button class="btn btn-blue btn-sm" onclick="saveCustomSymbols()">💾 Save Symbols</button>
+            <span id="symCount" style="font-size:11px;color:var(--t3);align-self:center"></span>
+          </div>
+        </div>
+        <div id="allSymInfo" style="font-size:11px;color:var(--t3)">
+          Scanning <strong id="totalSymCount">—</strong> live USDT-futures pairs from Bitget API
+        </div>
+      </div>
+
+      <!-- Section: API Keys -->
+      <div style="padding:10px 14px 0;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;font-weight:700">🔑 API Keys & Webhooks</div>
+      <div class="cfg-grid" style="padding-bottom:14px">
+        <div class="cfg-f" style="grid-column:span 2">
+          <label class="cfg-lbl">CryptoPanic API Key (Sentiment)</label>
+          <div style="display:flex;gap:6px">
+            <input class="cfg-inp" type="password" id="cfgCPKey" style="flex:1" placeholder="Leave blank to disable sentiment"/>
+            <button class="btn btn-ghost btn-sm" onclick="toggleShow('cfgCPKey')">👁</button>
+          </div>
+        </div>
+        <div class="cfg-f" style="grid-column:span 2">
+          <label class="cfg-lbl">Discord Webhook URL</label>
+          <div style="display:flex;gap:6px">
+            <input class="cfg-inp" type="password" id="cfgDiscordKey" style="flex:1" placeholder="https://discord.com/api/webhooks/..."/>
+            <button class="btn btn-ghost btn-sm" onclick="toggleShow('cfgDiscordKey')">👁</button>
+          </div>
+        </div>
+        <div style="grid-column:span 2;padding-top:2px">
+          <button class="btn btn-blue btn-sm" onclick="saveApiKeys()">💾 Save API Keys</button>
+          <button class="btn btn-ghost btn-sm" onclick="testDiscord()" style="margin-left:6px">🔔 Test Discord</button>
+          <span id="apiKeySaveStatus" style="font-size:11px;color:var(--green);margin-left:8px"></span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+
+  <!-- SIDEBAR -->
+  <div class="side">
+
+    <!-- F&G -->
+    <div class="sb">
+      <div class="sb-title">😨 Fear &amp; Greed</div>
+      <div class="fg-num" id="fgNum" style="color:var(--yellow)">—</div>
+      <div class="fg-lbl" id="fgLbl">Loading…</div>
+      <div class="fg-track"><div class="fg-pin" id="fgPin" style="left:50%"></div></div>
+      <div class="fg-lbls"><span>Fear</span><span>Neutral</span><span>Greed</span></div>
+    </div>
+
+    <!-- SYSTEM HEALTH -->
+    <div class="sb">
+      <div class="sb-title">🛡 System Health</div>
+      <div class="h-row"><span>Scanner</span><span id="hScanner">—</span></div>
+      <div class="h-row"><span>Last Scan</span><span id="hLastScan" class="sb-val">—</span></div>
+      <div class="h-row"><span>Signals Seen</span><span id="hSigs" class="sb-val">0</span></div>
+      <div class="h-row"><span>Symbols / Scan</span><span id="hSyms" class="sb-val">0</span></div>
+      <div class="h-row"><span>WS Tick Prices</span><span id="hWS" class="sb-val">0</span></div>
+      <div class="h-row"><span>Sentiment API</span><span id="hSent">—</span></div>
+      <div class="h-row"><span>Safe Mode</span><span id="hSafe">—</span></div>
+    </div>
+
+    <!-- ERROR LOG -->
+    <div class="sb">
+      <div class="sb-title">⚠ Error Log
+        <button class="btn btn-ghost btn-sm" style="padding:1px 7px;font-size:10px;margin-left:auto" onclick="clearError()">Clear</button>
+      </div>
+      <div id="errLog" style="font-size:11px;color:var(--t3)"><span class="dot-ok">●</span> No errors</div>
+    </div>
+
+    <!-- TOP SYMBOLS -->
+    <div class="sb">
+      <div class="sb-title">📈 Top Scan Symbols</div>
+      <div id="symList"></div>
+    </div>
+
+  </div>
+
+</div><!-- /body -->
+
+<div id="toast"></div>
+
+<script>
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const fmt = n  => (n==null||n===undefined||n==='') ? '—'
+                  : Math.abs(parseFloat(n))>=10000 ? parseFloat(n).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})
+                  : Math.abs(parseFloat(n))>=1      ? parseFloat(n).toFixed(4)
+                  : parseFloat(n).toFixed(6);
+const fmtPnl = n => {
+  const v = parseFloat(n)||0;
+  return (v>=0?'+$':'-$')+Math.abs(v).toFixed(2);
+};
+const pClass = n => parseFloat(n)>=0 ? 'ppos' : 'pneg';
+
+function elapsed(iso){
+  if(!iso) return '—';
+  const s = Math.floor((Date.now()-new Date(iso))/1000);
+  if(s<60) return s+'s';
+  if(s<3600) return Math.floor(s/60)+'m '+( s%60)+'s';
+  return Math.floor(s/3600)+'h '+Math.floor((s%3600)/60)+'m';
+}
+function timeStr(iso){
+  if(!iso) return '—';
+  return new Date(iso).toLocaleTimeString();
+}
+function scoreBar(v){
+  return `<div class="sbar"><span class="sbar-num">${Math.round(v||0)}</span>
+    <div class="sbar-bg"><div class="sbar-fill" style="width:${Math.min(v||0,100)}%"></div></div></div>`;
+}
+function toast(msg,type='ok'){
+  const t=$('toast');t.textContent=msg;
+  t.style.borderColor=type==='err'?'var(--red)':type==='ok'?'var(--green)':'var(--bd2)';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(path,method='GET',body=null){
+  try{
+    const r=await fetch(path,{
+      method,
+      headers:{'Content-Type':'application/json'},
+      body:body?JSON.stringify(body):null
+    });
+    if(!r.ok){ console.error(path,'HTTP',r.status); return null; }
+    return await r.json();
+  }catch(e){console.error(path,e);return null;}
+}
+
+// ── Refresh loop ──────────────────────────────────────────────────────────────
+let _allLogs = [];
+
+async function fetchLogs(){
+  const data = await api('/api/logs?n=300');
+  if(!data) return;
+  _allLogs = data;
+  $('logBadge').textContent = data.length;
+  filterLogs();
+}
+
+function filterLogs(){
+  const filter = $('logFilter').value;
+  const box = $('logBox');
+  const filtered = filter ? _allLogs.filter(l => l.includes(filter)) : _allLogs;
+  if(!filtered.length){
+    box.innerHTML='<span style="color:var(--t4)">No log entries yet…</span>';
+    return;
+  }
+  box.innerHTML = filtered.slice(0,200).map(line => {
+    // Strip ANSI color codes that CMD outputs
+    const clean = line.replace(/\[[0-9;]*m/g, '').replace(/←\[[0-9;]*m/g, '');
+    let color = 'var(--t2)';
+    if(clean.includes('ERROR'))   color = 'var(--red)';
+    else if(clean.includes('WARNING')) color = 'var(--yellow)';
+    else if(clean.includes('Trade opened') || clean.includes('✅')) color = 'var(--green)';
+    else if(clean.includes('Trade closed')) color = '#22d3ee';
+    else if(clean.includes('Signal') || clean.includes('✦')) color = 'var(--blue)';
+    const esc = clean.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return `<div style="color:${color};padding:1px 0;border-bottom:1px solid rgba(255,255,255,0.04)">${esc}</div>`;
+  }).join('');
+  box.scrollTop = 0;
+}
+
+function copyLogs(){
+  const text = _allLogs.join('\n');
+  navigator.clipboard.writeText(text).then(()=>toast('Logs copied to clipboard ✓','ok')).catch(()=>{
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast('Logs copied ✓','ok');
+  });
+}
+
+function clearLogDisplay(){
+  $('logBox').innerHTML='<span style="color:var(--t4)">Cleared. Next fetch in 3s…</span>';
+}
+
+// Config load once on startup + every 30s (not every 3s)
+let _configLoaded = false;
+async function maybeLoadConfig(){
+  if(!_configLoaded){ await fetchConfig(); _configLoaded=true; }
+}
+setInterval(()=>{ _configLoaded=false; }, 30000); // reset every 30s
+
+async function refreshAll(){
+  await Promise.all([
+    fetchStatus(),
+    fetchOpen(),
+    fetchSignals(),
+    fetchClosed(),
+    fetchStratPerf(),
+    fetchFG(),
+    fetchMarketIntel(),
+    fetchLogs(),
+    maybeLoadConfig(),
+  ]);
+}
+setInterval(refreshAll, 3000);
+refreshAll();
+
+// ── Status ────────────────────────────────────────────────────────────────────
+async function fetchStatus(){
+  const d=await api('/api/status');
+  if(!d) return;
+  try{
+  const running=!!d.running;
+
+  const chip=$('runChip'),txt=$('runTxt');
+  chip.className='chip '+(running?'chip-run':'chip-stop');
+  txt.textContent=running?'RUNNING':'STOPPED';
+
+  $('btnStart').disabled=running; $('btnStop').disabled=!running;
+
+  const up=d.uptime||0;
+  $('uptimeEl').textContent=Math.floor(up/3600)+'h '+Math.floor((up%3600)/60)+'m '+(up%60)+'s';
+
+  const total=(d.stats?.wins||0)+(d.stats?.losses||0);
+  $('sTrades').textContent=total;
+  $('sWL').textContent=(d.stats?.wins||0)+'W / '+(d.stats?.losses||0)+'L';
+  $('sWin').textContent=(d.win_rate||0)+'%';
+
+  const pnl=d.stats?.net_pnl||0;
+  $('sPnl').textContent=fmtPnl(pnl);
+  $('sPnl').className='stat-val '+(pnl>=0?'c-green':'c-red');
+
+  $('sSig').textContent=d.stats?.signals_seen||0;
+
+  const today=new Date().toISOString().slice(0,10);
+  $('sDate').textContent=today;
+  const td=d.stats?.daily_pnl?.[today]||0;
+  $('sToday').textContent=fmtPnl(td);
+  $('sToday').className='stat-val '+(td>=0?'c-green':'c-red');
+
+  // Scanner status chip
+  const ls=d.scanner?.last_scan;
+  if(running){
+    const ago=ls?Math.floor(Date.now()/1000-ls):null;
+    $('scanStatus').textContent=ago!=null
+      ?`Last scan ${ago}s ago · ${d.scanner?.symbols_scanned||0} symbols`
+      :'Scanner running…';
+  }else{$('scanStatus').textContent='Scanner stopped';}
+
+  // Health
+  $('hScanner').innerHTML=running?'<span class="dot-ok">● Running</span>':'<span class="dot-err">● Stopped</span>';
+  $('hLastScan').textContent=ls?new Date(ls*1000).toLocaleTimeString():'—';
+  $('hSigs').textContent=d.stats?.signals_seen||0;
+  $('hSyms').textContent=d.scanner?.symbols_scanned||0;
+  $('hWS').textContent=d.ws_prices||0;
+  $('hSent').innerHTML=d.sentiment_ok
+    ?'<span class="dot-ok">● Active</span>'
+    :'<span class="dot-warn">● No API Key</span>';
+  $('hSafe').innerHTML=d.safe_mode
+    ?'<span class="dot-err">● Active <button class="btn btn-ghost btn-sm" style="font-size:10px;padding:1px 6px;margin-left:4px" onclick="exitSafe()">Reset</button></span>'
+    :'<span class="dot-ok">● Off</span>';
+
+  $('errLog').innerHTML=d.last_error
+    ?`<div class="err-item">${d.last_error}</div>`
+    :'<span class="dot-ok">●</span> No errors';
+  }catch(e){ console.error('fetchStatus error:',e); }
+}
+
+// ── Live price cache (fetched from /api/status open_trades prices) ────────────
+let _livePrices = {};
+
+async function fetchLivePrices(symbols){
+  if(!symbols.length) return;
+  // Fetch prices one by one via orderbook endpoint (fastest available)
+  // Use batch from open_trades endpoint which already has current_price field if added
+  // Fallback: use last known from signals
+}
+
+// ── Open trades ───────────────────────────────────────────────────────────────
+async function fetchOpen(){
+  const data = await api('/api/open_trades_with_pnl');
+  const trades = data || (await api('/api/open_trades')) || [];
+  $('openBadge').textContent = trades.length;
+  $('sOpen').textContent = trades.length;
+  const b = $('openBody');
+  if(!trades.length){
+    b.innerHTML='<tr><td colspan="20" class="empty">No open trades</td></tr>';
+    const unrEl=$('sUnrealized');
+    if(unrEl){unrEl.textContent='+$0.00';unrEl.className='stat-val';}
+    return;
+  }
+
+  let totalUnrealized = 0;
+  trades.forEach(t=>{ totalUnrealized += parseFloat(t.unrealized_pnl)||0; });
+  const unrEl=$('sUnrealized');
+  if(unrEl){
+    unrEl.textContent=(totalUnrealized>=0?'+$':'-$')+Math.abs(totalUnrealized).toFixed(2);
+    unrEl.className='stat-val '+(totalUnrealized>=0?'c-green':'c-red');
+  }
+
+  b.innerHTML = trades.map(t=>{
+    const rr        = t.risk_reward ? parseFloat(t.risk_reward).toFixed(2) : '—';
+    const tf        = t.timeframe || '—';
+    const entry     = parseFloat(t.entry_price) || 0;
+    const curPrice  = parseFloat(t.current_price) || 0;
+    const dir       = t.direction || '';
+    const margin    = parseFloat(t.invested_usd || t.size || 0);
+    const lev       = parseInt(t.leverage || 10);
+    const notional  = parseFloat(t.notional || (margin * lev) || 0);
+    const tp1Badge  = t.tp1_hit ? '<span style="color:var(--yellow);font-size:10px"> ✓TP1</span>' : '';
+    const trailBadge= t.trailing_sl ? '<span style="color:var(--cyan);font-size:9px"> 🔄</span>' : '';
+
+    let curTxt='…', pnlTxt='—', pnlPctTxt='—', pnlClass='', priceDeltaTxt='—', pdClass='';
+    if(curPrice > 0){
+      curTxt = fmt(curPrice);
+      const rawPnl  = parseFloat(t.unrealized_pnl) || 0;
+      const pnlPct  = parseFloat(t.unrealized_pnl_pct) || 0;
+      const priceChg= parseFloat(t.price_change_pct) || 0;
+      pnlTxt     = (rawPnl>=0?'+$':'-$') + Math.abs(rawPnl).toFixed(4);
+      pnlPctTxt  = (pnlPct>=0?'+':'') + pnlPct.toFixed(2) + '%';
+      pnlClass   = rawPnl >= 0 ? 'ppos' : 'pneg';
+      priceDeltaTxt = (priceChg>=0?'+':'') + priceChg.toFixed(3) + '%';
+      pdClass    = priceChg >= 0 ? 'ppos' : 'pneg';
+    }
+
+    return `<tr>
+      <td><strong>${t.symbol}</strong></td>
+      <td><span class="tag tag-${dir.toLowerCase()}">${dir}</span></td>
+      <td class="r">${fmt(entry)}</td>
+      <td class="r" style="font-weight:600">${curTxt}</td>
+      <td class="r ${pnlClass}" style="font-weight:700">${pnlTxt}</td>
+      <td class="r ${pnlClass}">${pnlPctTxt}</td>
+      <td class="r ${pdClass}" style="font-size:11px">${priceDeltaTxt}</td>
+      <td class="r" style="color:var(--yellow);font-weight:600">$${margin.toFixed(2)} (${lev}x)</td>
+      <td class="r" style="color:var(--t2)">$${notional.toFixed(2)}</td>
+      <td class="r" style="color:var(--purple);font-weight:700">${lev}x</td>
+      <td style="color:var(--cyan);font-size:10px;font-weight:700">CROSS</td>
+      <td class="r" style="color:var(--red)">${fmt(t.sl)}${trailBadge}</td>
+      <td class="r" style="color:var(--yellow)">${fmt(t.tp1)}${tp1Badge}</td>
+      <td class="r" style="color:var(--green)">${fmt(t.tp2)}</td>
+      <td class="r">${rr}</td>
+      <td style="color:var(--cyan);font-size:11px">${t.strategy||'—'}</td>
+      <td>${scoreBar(t.score)}</td>
+      <td style="color:var(--t3)">${tf}</td>
+      <td style="color:var(--t3)">${elapsed(t.open_time)}</td>
+      <td><button class="btn btn-red btn-sm" onclick="closeTrade('${t.id}','${t.symbol}','${dir}')">Close</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Signals ───────────────────────────────────────────────────────────────────
+async function fetchSignals(){
+  const data=await api('/api/signals');if(!data)return;
+  $('sigBadge').textContent=data.length;
+  const b=$('sigBody');
+  if(!data.length){b.innerHTML='<tr><td colspan="16" class="empty">No signals yet — scanner running, wait 2–5 min…</td></tr>';return;}
+  b.innerHTML=data.slice(0,80).map(s=>{
+    const rr=s.risk_reward!=null?parseFloat(s.risk_reward).toFixed(2):'—';
+    const tf=`${s.timeframe_fast||''}/${s.timeframe_slow||''}`;
+    // Executed = green badge, Signal only = grey badge
+    const statusTag=s.executed
+      ?'<span class="tag tag-traded" title="Trade position opened">✅ Traded</span>'
+      :'<span class="tag tag-time" title="Signal only, not traded (max trades / score / daily limit)">📋 Signal</span>';
+    const rrStyle=s.risk_reward&&s.risk_reward>=2?'color:var(--green)':'color:var(--t2)';
+    return `<tr>
+      <td><strong>${s.symbol}</strong></td>
+      <td><span class="tag tag-${(s.direction||'').toLowerCase()}">${s.direction}</span></td>
+      <td>${scoreBar(s.score)}</td>
+      <td class="r">${fmt(s.price)}</td>
+      <td class="r" style="color:var(--red)">${fmt(s.sl)}</td>
+      <td class="r" style="color:var(--yellow)">${fmt(s.tp1)}</td>
+      <td class="r" style="color:var(--green)">${fmt(s.tp2)}</td>
+      <td class="r" style="${rrStyle}">${rr}</td>
+      <td style="color:var(--cyan);font-size:11px">${s.strategy||'—'}</td>
+      <td style="color:var(--t3)">${tf}</td>
+      <td style="color:var(--purple);font-size:11px">${s.regime||'—'}</td>
+      <td class="r">${s.adx||'—'}</td>
+      <td class="r">${s.rsi||'—'}</td>
+      <td class="r">${s.volume_ratio||'—'}</td>
+      <td>${statusTag}</td>
+      <td style="color:var(--t3)">${timeStr(s.time)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Closed trades ─────────────────────────────────────────────────────────────
+async function fetchClosed(){
+  const data=await api('/api/closed_trades');if(!data)return;
+  $('closedBadge').textContent=data.length;
+  const b=$('closedBody');
+  if(!data.length){b.innerHTML='<tr><td colspan="9" class="empty">No closed trades</td></tr>';return;}
+  const rTag=r=>r==='TP2'?'tag-tp2':r==='SL'?'tag-sl':r.includes('MANUAL')?'tag-manual':'tag-time';
+  b.innerHTML=[...data].reverse().slice(0,60).map(t=>{
+    const pnl=t.net_pnl||0;
+    return `<tr>
+      <td><strong>${t.symbol}</strong></td>
+      <td><span class="tag tag-${(t.direction||'').toLowerCase()}">${t.direction}</span></td>
+      <td class="r">${fmt(t.entry_price)}</td>
+      <td class="r">${fmt(t.exit_price)}</td>
+      <td class="r ${pClass(pnl)}">${fmtPnl(pnl)}</td>
+      <td style="color:var(--cyan);font-size:11px">${t.strategy||'—'}</td>
+      <td><span class="tag ${rTag(t.close_reason||'')}">${t.close_reason||'—'}</span></td>
+      <td style="color:var(--t3)">${elapsed(t.open_time)}</td>
+      <td style="color:var(--t3)">${timeStr(t.close_time)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Strategy perf ─────────────────────────────────────────────────────────────
+async function fetchStratPerf(){
+  const d=await api('/api/strategy_performance');if(!d)return;
+  const rows=Object.entries(d);
+  const b=$('stratBody');
+  if(!rows.length){b.innerHTML='<tr><td colspan="5" class="empty">No data yet</td></tr>';return;}
+  b.innerHTML=rows.map(([name,v])=>{
+    const wr=v.win_rate||0;
+    const pnl=v.net_pnl||0;
+    return `<tr>
+      <td><strong>${name}</strong></td>
+      <td class="r">${v.trades||0}</td>
+      <td class="r">${wr}%</td>
+      <td class="r ${pClass(pnl)}">${fmtPnl(pnl)}</td>
+      <td class="r ${pClass(v.avg_pnl)}">${fmtPnl(v.avg_pnl)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── F&G ───────────────────────────────────────────────────────────────────────
+async function fetchFG(){
+  const d=await api('/api/fear_greed');if(!d)return;
+  const v=d.value||50;
+  $('fgNum').textContent=v;
+  $('fgNum').style.color=v<25?'var(--red)':v<45?'var(--orange)':v<55?'var(--yellow)':v<75?'var(--cyan)':'var(--green)';
+  $('fgLbl').textContent=d.classification||'Neutral';
+  $('fgPin').style.left=v+'%';
+}
+
+// ── Market intel ──────────────────────────────────────────────────────────────
+async function fetchMarketIntel(){
+  const d=await api('/api/market_intelligence');if(!d)return;
+  const syms=(d.top_scan_symbols||[]).slice(0,12);
+  $('symList').innerHTML=syms.map((s,i)=>`
+    <div class="sym-item">
+      <span class="sym-rank">#${i+1}</span>
+      <span class="sym-name">${s.symbol}</span>
+      <span class="sym-score">${Math.round(s.score)}</span>
+    </div>`).join('');
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
+async function fetchConfig(){
+  const d=await api('/api/config');if(!d)return;
+  $('cfgMode').value      = d.mode||'AUTO';
+  $('cfgLeverage').value  = d.leverage||10;
+  $('cfgWallet').value    = d.wallet_balance||1000;
+  $('cfgRisk').value      = d.risk_pct||2;
+  $('cfgMaxTrades').value = d.max_trades||5;
+  $('cfgInterval').value  = d.scan_interval||90;
+  $('cfgMinScore').value  = d.min_score||42;
+  $('cfgAdxMin').value    = d.adx_min||12;
+  $('cfgScoreGap').value  = d.score_gap||8;
+  $('cfgVolRatio').value  = d.vol_ratio_min||0.8;
+  $('cfgMinRR').value     = d.min_rr||2.0;
+  $('cfgSL').value        = d.sl_pct_manual||2;
+  $('cfgTP1').value       = d.tp1_pct_manual||3;
+  $('cfgTP2').value       = d.tp2_pct_manual||5;
+  $('cfgMaxHours').value  = d.max_trade_hours||48;
+  $('cfgMaxDailyTrades').value = d.max_daily_trades||10;
+  $('cfgMaxDailyLoss').value   = d.max_daily_loss_pct||5;
+  $('cfgAmount').value    = d.trade_amount_manual||25;
+  $('cfgFunding').checked  = !!d.funding_filter;
+  $('cfgOB').checked       = !!d.orderbook_filter;
+  $('cfgDiscord').checked  = !!d.discord_notifications;
+  $('cfgWS').checked       = !!d.websocket_enabled;
+}
+
+async function saveConfig(){
+  const cfg={
+    mode:                 $('cfgMode').value,
+    leverage:             parseInt($('cfgLeverage').value)||10,
+    wallet_balance:       parseFloat($('cfgWallet').value)||1000,
+    risk_pct:             parseFloat($('cfgRisk').value)||2,
+    max_trades:           parseInt($('cfgMaxTrades').value)||5,
+    scan_interval:        parseInt($('cfgInterval').value)||90,
+    min_score:            parseFloat($('cfgMinScore').value)||42,
+    adx_min:              parseFloat($('cfgAdxMin').value)||12,
+    score_gap:            parseFloat($('cfgScoreGap').value)||8,
+    vol_ratio_min:        parseFloat($('cfgVolRatio').value)||0.8,
+    min_rr:               parseFloat($('cfgMinRR').value)||2.0,
+    sl_pct_manual:        parseFloat($('cfgSL').value)||2,
+    tp1_pct_manual:       parseFloat($('cfgTP1').value)||3,
+    tp2_pct_manual:       parseFloat($('cfgTP2').value)||5,
+    max_trade_hours:      parseInt($('cfgMaxHours').value)||48,
+    max_daily_trades:     parseInt($('cfgMaxDailyTrades').value)||10,
+    max_daily_loss_pct:   parseFloat($('cfgMaxDailyLoss').value)||5,
+    trade_amount_manual:  parseFloat($('cfgAmount').value)||25,
+    funding_filter:       $('cfgFunding').checked,
+    orderbook_filter:     $('cfgOB').checked,
+    discord_notifications:$('cfgDiscord').checked,
+    websocket_enabled:    $('cfgWS').checked,
+  };
+  const r=await api('/api/config','POST',cfg);
+  if(r?.ok){toast('Config saved ✓','ok');}
+  else toast('Save failed','err');
+}
+
+function applyPreset(preset){
+  const presets={
+    normal:     { min_score:42,  adx_min:12, score_gap:8,  vol_ratio_min:0.8, min_rr:2.0 },
+    strict:     { min_score:55,  adx_min:18, score_gap:12, vol_ratio_min:1.2, min_rr:2.5 },
+    verystrict: { min_score:65,  adx_min:22, score_gap:16, vol_ratio_min:1.5, min_rr:3.0 },
+  };
+  const p=presets[preset];
+  if(!p)return;
+  $('cfgMinScore').value  = p.min_score;
+  $('cfgAdxMin').value    = p.adx_min;
+  $('cfgScoreGap').value  = p.score_gap;
+  $('cfgVolRatio').value  = p.vol_ratio_min;
+  $('cfgMinRR').value     = p.min_rr;
+  toast('Preset applied — click Save All to confirm','ok');
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+async function startBot(){
+  $('btnStart').disabled=true;
+  $('btnStop').disabled=false;
+  $('runChip').className='chip chip-run';
+  $('runTxt').textContent='STARTING…';
+  const r=await api('/api/start','POST');
+  if(r?.ok){
+    $('runTxt').textContent='RUNNING';
+    toast('Bot started ✓','ok');
+    setTimeout(refreshAll, 500);
+  } else {
+    $('runChip').className='chip chip-stop';
+    $('runTxt').textContent='STOPPED';
+    $('btnStart').disabled=false;
+    $('btnStop').disabled=true;
+    toast('Start failed','err');
+  }
+}
+
+async function stopBot(){
+  $('btnStop').disabled=true;
+  const r=await api('/api/stop','POST');
+  if(r?.ok){
+    $('runChip').className='chip chip-stop';
+    $('runTxt').textContent='STOPPED';
+    $('btnStart').disabled=false;
+    toast('Bot stopped','warn');
+    setTimeout(refreshAll, 500);
+  } else {
+    $('btnStop').disabled=false;
+    toast('Stop failed','err');
+  }
+}
+
+async function closeTrade(id, symbol, dir){
+  const label = symbol ? `${dir} ${symbol}` : id;
+  if(!confirm(`Close trade: ${label}?`))return;
+  const btn = event?.target;
+  if(btn){ btn.disabled=true; btn.textContent='...'; }
+  const r=await api('/api/close_trade','POST',{trade_id:id});
+  if(r?.ok){
+    toast(`✓ Closed ${label}`,'ok');
+    await refreshAll();
+  } else {
+    toast('Close failed — check logs','err');
+    if(btn){ btn.disabled=false; btn.textContent='Close'; }
+  }
+}
+
+async function confirmCloseAll(){
+  if(!confirm('Close ALL open trades?'))return;
+  const r=await api('/api/close_all_trades','POST');
+  if(r?.ok){toast(`Closed ${r.closed} trade(s)`,r.closed>0?'ok':'warn');await refreshAll();}
+  else toast('Failed','err');
+}
+
+async function exitSafe(){
+  await api('/api/exit_safe_mode','POST');
+  toast('Safe mode cleared','ok');
+  await refreshAll();
+}
+
+async function clearError(){
+  await api('/api/exit_safe_mode','POST');
+  $('errLog').innerHTML='<span class="dot-ok">●</span> Cleared';
+}
+</script>
+</body>
+</html>
