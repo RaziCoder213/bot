@@ -10,14 +10,12 @@ load_dotenv()
 
 # Streamlit Cloud helper
 def get_secret(key, default=""):
-    # 1. Try streamlit secrets
     try:
         import streamlit as st
         if key in st.secrets:
             return st.secrets[key]
     except:
         pass
-    # 2. Try env var
     return os.getenv(key, default)
 
 APP_HOST = "0.0.0.0"
